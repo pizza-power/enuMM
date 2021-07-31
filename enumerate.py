@@ -18,6 +18,8 @@ import os
 import subprocess
 from shutil import which
 
+# used when running programs that can use multiple threads
+# THREADS = 1
 
 # parse the CLI arguments
 def parse_args():
@@ -41,9 +43,7 @@ def parse_args():
     )
 
     # blacklist
-    parser.add_argument(
-        "-b", "--blacklist", help="a list of domains to ignore"
-    )
+    parser.add_argument("-b", "--blacklist", help="a list of domains to ignore")
 
     # output file
     parser.add_argument(
@@ -74,9 +74,7 @@ def check_dependencies(dependency_list: list):
     do_they_exist = [
         program for program in dependency_list if which(program) is not None
     ]
-    shit_you_dont_have_installed = list(
-        set(dependency_list) ^ set(do_they_exist)
-    )
+    shit_you_dont_have_installed = list(set(dependency_list) ^ set(do_they_exist))
     if shit_you_dont_have_installed:
         print(
             "The following programs are not in $PATH. Please install them: "
@@ -87,14 +85,15 @@ def check_dependencies(dependency_list: list):
 
 def run_amass(domain: str):
     try:
-        filename = f"{domain}/{domain}_amass.txt"
-
+        filename = f"{domain}/amass-{domain}.txt"
         subprocess.call(
             [
                 "amass",
                 "enum",
                 "-ip",
                 "-v",
+                "-config",
+                "/home/pizzapower/configs/amass.cfg",
                 "-d",
                 domain,
                 "-o",
@@ -116,7 +115,7 @@ def run_eyewitness(domain: str):
     output_directory = f"{domain}/eyewitness"
     os.mkdir(output_directory)
 
-    command = f"~/tools/EyeWitness/Python/EyeWitness.py --web -f {domain}/{domain}_httpx.txt -d {output_directory} --no-prompt --delay {delay} --timeout {timeout}"
+    command = f"~/tools/EyeWitness/Python/EyeWitness.py --web -f {domain}/httpx-{domain}.txt -d {output_directory} --no-prompt --delay {delay} --timeout {timeout}"
 
     try:
         os.system(command)
@@ -128,7 +127,8 @@ def run_eyewitness(domain: str):
 def run_httpx(domain: str):
     # httpx -ports 80,443,8009,8080,8081,8090,8180,8443 -l subdomains.txt -o httpx.txt
     # create subdomains from amass list
-    command = f'cut -d " " -f 2 {domain}/{domain}_amass.txt | tr , "\n" | uniq > {domain}/{domain}-ips.txt'
+    command = f'cut -d " " -f 2 {domain}/amass-{domain}.txt | tr , "\n" | uniq > {domain}/ips-{domain}.txt'
+    print("running httpx...")
     try:
         os.system(command)
 
@@ -136,8 +136,8 @@ def run_httpx(domain: str):
         print(e)
 
     try:
-        input_filename = f"{domain}/{domain}-ips.txt"
-        output_filename = f"{domain}/{domain}_httpx.txt"
+        input_filename = f"{domain}/ips-{domain}.txt"
+        output_filename = f"{domain}/httpx-{domain}.txt"
 
         subprocess.call(
             [
@@ -164,16 +164,25 @@ def masscan_or_nmap(ip_address: str):
 
 
 def find_new_subdomains(domain: str):
-    """ run this in a loop after init """
+    """run this in a loop after init"""
     return
 
 
 def get_ip_addresses_from_subdomain_list():
-    """ uses amass ip to get ips from already run scan """
+    """uses amass ip to get ips from already run scan"""
     """
-    cut -d " " -f 2 westernunion.com_amass.txt | tr , '\n' | uniq
+    cut -d " " -f 2 amass-westernunion.com.txt | tr , '\n' | uniq
     """
     return
+
+
+def get_domains_from_amass_output():
+    """opens amass.txt and gets subdomains
+    to run them through amass again to
+    find sub-sub-domains
+    """
+    with open("arguments.domains") as domains:
+        domain_list = [line.strip() for line in domains]
 
 
 def main():
