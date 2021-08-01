@@ -12,9 +12,8 @@
 # or for a single domain
 # pizza-enum.py --domain pizzapower.me
 #
-# MVP == Refactor
-# Pass argparse object to each function then just run them as you want
-# run_amass()
+# You'll need to add your config file location in the amass section
+
 
 
 import argparse
@@ -129,7 +128,7 @@ def run_amass(domain: str):
                 "-ip",
                 "-v",
                 "-config",
-                "/home/pizzapower/configs/amass.cfg",
+                "{put config location here}",
                 "-d",
                 domain,
                 "-o",
@@ -151,7 +150,7 @@ def run_eyewitness(domain: str):
     output_directory = f"{domain}/eyewitness"
     os.mkdir(output_directory)
 
-    command = f"~/tools/EyeWitness/Python/EyeWitness.py --web -f {domain}/httpx-{domain}.txt -d {output_directory} --no-prompt --delay {delay} --timeout {timeout}"
+    command = f"EyeWitness.py --web -f {domain}/httpx-{domain}.txt -d {output_directory} --no-prompt --delay {delay} --timeout {timeout}"
 
     try:
         os.system(command)
